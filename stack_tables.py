@@ -5,7 +5,7 @@ import os
 # You can check the data by running the file interactively and calling `check`
 
 # the data directory, containing csv files
-data_dir = 'data_Q4_2025'
+data_dir = 'data'
 list_of_files = os.listdir(data_dir)
 dfs = []
 for i, file in enumerate(list_of_files):
