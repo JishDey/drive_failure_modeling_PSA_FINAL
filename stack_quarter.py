@@ -11,13 +11,17 @@ import os
 def quarter_stack(quarter_dir: str, data_dir: str = 'data'):
         dfs = []
         for i, file in enumerate(os.listdir(data_dir + "/" + quarter_dir)):
-                df = pd.read_csv(f'{data_dir}/{quarter_dir}/{file}', 
-                                usecols=['date', 'serial_number', 'model', 'failure', 'smart_9_raw'])
-                df['date'] = pd.to_datetime(df['date'])
-                df['serial_number'] = df['serial_number'].astype('category')
-                df['model'] = df['model'].astype('category')
-                dfs.append(df)
-                print(f"quarter: {quarter_dir},file number {i}")
+                try:
+                        df = pd.read_csv(f'{data_dir}/{quarter_dir}/{file}', 
+                                        usecols=['date', 'serial_number', 'model', 'failure', 'smart_9_raw'],
+                                        encoding='utf-8')
+                        df['date'] = pd.to_datetime(df['date'])
+                        df['serial_number'] = df['serial_number'].astype('category')
+                        df['model'] = df['model'].astype('category')
+                        dfs.append(df)
+                        print(f"quarter: {quarter_dir}, file {i}: {file}")
+                except Exception as e:
+                        print(f"Error processing file {file}: {e}")
 
         # stacking the dataframes into one - like an 'append'
         stacked_df = pd.concat(dfs)
@@ -25,12 +29,12 @@ def quarter_stack(quarter_dir: str, data_dir: str = 'data'):
         # grouping the data so that each drive (marked by serial) is one
         # this is similar to a 'join over index'
         grouped = stacked_df.groupby('serial_number').agg(
-			first_date=('date', 'min'),
-			last_date=('date', 'max'),
-			failed=('failure', 'max'),
-			model=('model', 'first'),
-			smart9=('smart_9_raw', 'max')
-		).reset_index()
+            first_date=('date', 'min'),
+            last_date=('date', 'max'),
+            failed=('failure', 'max'),
+            model=('model', 'first'),
+            smart9=('smart_9_raw', 'max')
+        ).reset_index()
 
         # output to file
         grouped.to_csv(f"merged_quarters/{quarter_dir}_data.csv", index=False) 
@@ -38,7 +42,6 @@ def quarter_stack(quarter_dir: str, data_dir: str = 'data'):
 def check(lifetime_df):
     print(lifetime_df.head())
     print(lifetime_df['failed'].value_counts())
-    print(lifetime_df['lifetime_days'].describe())
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

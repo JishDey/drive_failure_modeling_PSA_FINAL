@@ -1,3 +1,4 @@
+#!/Users/thundergod/workspace/EE24/final_project/.venv/bin/python3
 import pandas as pd
 import os
 
@@ -19,19 +20,17 @@ for i, file in enumerate(os.listdir(data_dir)):
 
 # stacking the dataframes into one - like an 'append'
 stacked_df = pd.concat(dfs)
+del dfs # free up memory
 
 # grouping the data so that each drive (marked by serial) is one
 # this is similar to a 'join over index'
-grouped = stacked_df.groupby('serial_number')
-lifetime_df = grouped.agg({
-    'first_date': 'min',
-    'last_date': 'max',
-    'failed': 'max',
-    'model': 'first',
-    'smart9': 'max'
-})
-
-lifetime_df.columns = ['first_date', 'last_date', 'failed', 'model', 'smart9']
+lifetime_df = stacked_df.groupby('serial_number').agg(
+    first_date=('first_date', 'min'),
+    last_date=('last_date', 'max'),
+    failed=('failed', 'max'),
+    model=('model', 'first'),
+    smart9=('smart9', 'max')
+).reset_index()
 
 # find the lifetime of each drive in days, by subtracting the first date from the last date
 lifetime_df['lifetime_days'] = (
