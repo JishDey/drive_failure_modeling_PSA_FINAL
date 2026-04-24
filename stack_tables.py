@@ -3,7 +3,6 @@ import pandas as pd
 import os
 
 # This file(will) automatically compile files into the drive survival data.
-# You can check the data by running the file interactively and calling `check`
 
 # the data directory, containing csv files
 # this block could be improved by os.walk, but this is good enough for now 
