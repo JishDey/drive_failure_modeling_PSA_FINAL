@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import skew, kurtosis
+from scipy.stats import weibull_min, expon
+from scipy.special import gamma
+
 
 # load processed dataset (TODO: to be extended to multiple datasets)
 df = pd.read_csv('lifetime_data.csv')
@@ -48,6 +51,12 @@ def estimate_exponential():
 
     return lambda_hat, mean_T, var_T, skew_T, kurt_T
 
+def estimate_weibull():
+    T = failed_df['smart9'].values
+    k_hat, loc, lambda_hat = weibull_min.fit(T, floc=0)
+    print(f"Estimated Weibull parameters: k={k_hat:.4f}, lambda={lambda_hat:.4f}")
+    return k_hat, loc, lambda_hat
+
 def compare_stats(lambda_hat, empirical_mean, empirical_var, empirical_skew, 
                                                         empirical_kurt):
     theoretical_mean = 1 / lambda_hat
@@ -69,8 +78,27 @@ def compare_stats(lambda_hat, empirical_mean, empirical_var, empirical_skew,
     print(f"Theoretical Kurt: {theoretical_kurt:.4f}")
     print(f"Empirical Kurt:   {empirical_kurt:.4f}")
 
+def compare_stats_weibull(k_hat, lambda_hat, empirical_mean, empirical_var):
+    
+    # theoretical moments
+    theoretical_mean = lambda_hat * gamma(1 + 1 / k_hat)
+    theoretical_var = (lambda_hat**2) * (
+        gamma(1 + 2 / k_hat) - (gamma(1 + 1 / k_hat))**2
+    )
+
+    print("\n--- Weibull Comparison ---")
+    print(f"Theoretical Mean: {theoretical_mean:.4f}")
+    print(f"Empirical Mean:   {empirical_mean:.4f}")
+    print("         - - -")
+    print(f"Theoretical Var:  {theoretical_var:.4f}")
+    print(f"Empirical Var:    {empirical_var:.4f}")
+
 def simulate_exponential(lambda_hat, N=10000):
     simulated = np.random.exponential(1 / lambda_hat, size=N)
+    return simulated
+
+def simulate_weibull(k_hat, lambda_hat, N=10000):
+    simulated = weibull_min.rvs(c=k_hat, scale=lambda_hat, size=N)
     return simulated
 
 def plot_comparison(real_data, simulated_data):
@@ -86,9 +114,9 @@ def plot_comparison(real_data, simulated_data):
 
 def main():
     check_failed()
-    lambda_hat, mean_T, var_T, skew_T, kurt_T = estimate_exponential()
-    compare_stats(lambda_hat, mean_T, var_T, skew_T, kurt_T)
-    simulated = simulate_exponential(lambda_hat, N=len(failed_df))
+    k_hat, loc, lambda_hat = estimate_weibull()
+    compare_stats_weibull(k_hat, lambda_hat, *estimate_exponential()[1:3])
+    simulated = simulate_weibull(k_hat, lambda_hat, N=len(failed_df))
     plot_comparison(failed_df['smart9'], simulated)
 
 
